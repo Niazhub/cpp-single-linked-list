@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <string>
 #include <utility>
+#include <cassert>
 
 template <typename Type>
 class SingleLinkedList {
@@ -85,6 +86,7 @@ class SingleLinkedList {
         // Возвращает ссылку на самого себя
         // Инкремент итератора, не указывающего на существующий элемент списка, приводит к неопределённому поведению
         BasicIterator& operator++() noexcept {
+            assert(node_ != nullptr);
             node_ = node_->next_node;
             return *this;
         }
@@ -103,6 +105,7 @@ class SingleLinkedList {
         // Вызов этого оператора у итератора, не указывающего на существующий элемент списка,
         // приводит к неопределённому поведению
         [[nodiscard]] reference operator*() const noexcept {
+            assert(node_ != nullptr);
             return node_->value;
         }
 
@@ -110,6 +113,7 @@ class SingleLinkedList {
         // Вызов этого оператора у итератора, не указывающего на существующий элемент списка,
         // приводит к неопределённому поведению
         [[nodiscard]] pointer operator->() const noexcept {
+            assert(node_ != nullptr);
             return &(node_->value);
         }
 
@@ -173,21 +177,7 @@ public:
 
     SingleLinkedList(std::initializer_list<Type> values) {
         for (const auto& value : values) {
-            // Создаем новый узел и копируем значение из values
-            Node* new_node = new Node(value, nullptr);
-
-            // Добавляем новый узел в конец списка
-            if (head_.next_node == nullptr) {
-                head_.next_node = new_node;
-            } else {
-                Node* last_node = head_.next_node;
-                while (last_node->next_node != nullptr) {
-                    last_node = last_node->next_node;
-                }
-                last_node->next_node = new_node;
-            }
-
-            // Увеличиваем размер списка
+            CopyElements(value);
             size_++;
         }
     }
@@ -197,18 +187,7 @@ public:
 
         Node* other_node = other.head_.next_node;
         while (other_node != nullptr) {
-            Node* new_node = new Node(other_node->value, nullptr);
-
-            if (head_.next_node == nullptr) {
-                head_.next_node = new_node;
-            } else {
-                Node* last_node = head_.next_node;
-                while (last_node->next_node != nullptr) {
-                    last_node = last_node->next_node;
-                }
-                last_node->next_node = new_node;
-            }
-
+            CopyElements(other_node->value);
             other_node = other_node->next_node;
             size_++;
         }
@@ -216,6 +195,20 @@ public:
     
     ~SingleLinkedList(){
         Clear();
+    }
+
+    template <typename T>
+    void CopyElements(const T& node){
+        Node* new_node = new Node(node, nullptr);
+        if (head_.next_node == nullptr) {
+            head_.next_node = new_node;
+        } else {
+            Node* last_node = head_.next_node;
+            while (last_node->next_node != nullptr) {
+                last_node = last_node->next_node;
+            }
+            last_node->next_node = new_node;
+        }
     }
     
     [[nodiscard]] size_t GetSize() const noexcept {
@@ -232,6 +225,7 @@ public:
      * Если при создании элемента будет выброшено исключение, список останется в прежнем состоянии
      */
     Iterator InsertAfter(ConstIterator pos, const Type& value) {
+        assert(pos.node_ != nullptr);
         Node* newNode = new Node{value, pos.node_->next_node};
         Node* current = pos.node_;
         try
@@ -262,6 +256,7 @@ public:
     * Возвращает итератор на элемент, следующий за удалённым
     */
     Iterator EraseAfter(ConstIterator pos) noexcept {
+        assert(pos.node_ != nullptr);
         Node* current = pos.node_->next_node;
         pos.node_->next_node = current->next_node;
         delete current;
